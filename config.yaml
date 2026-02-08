@@ -1,0 +1,19 @@
+# LMU Telemetry Analyzer Configuration
+
+# Path to LMU telemetry directory
+# Common locations that will be checked if not specified:
+#   - C:\Users\<username>\Documents\My Games\Le Mans Ultimate\UserData\Telemetry
+#   - C:\Users\<username>\Documents\Le Mans Ultimate\UserData\Telemetry
+#   - User-specified path
+telemetry_path: "C:/Users/Jan/Documents/GitHub/lmu_telemetry"
+
+# Read-only mode enforcement (always true for safety)
+read_only: true
+
+# API configuration
+api:
+  host: "127.0.0.1"
+  port: 8000
+
+# Cache directory for derived data (Step 4)
+cache_dir: "./cache"

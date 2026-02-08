@@ -1,0 +1,9 @@
+# project
+nul
+*.duckdb
+
+# python
+*_cache
+.venv
+*pycache*
+uv.lock
