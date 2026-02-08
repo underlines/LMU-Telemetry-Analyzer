@@ -3,9 +3,12 @@ nul
 *.duckdb
 cache/
 logs/
+*.log
+q
 
 # python
 *_cache
 .venv
 *pycache*
 uv.lock
+
