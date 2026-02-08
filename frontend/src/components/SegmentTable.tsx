@@ -1,5 +1,5 @@
 import { Box, Paper, Typography, Alert } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import type { LapSegmentMetrics, TrackLayout, SegmentMetrics } from '../types/api';
 
 interface SegmentTableProps {

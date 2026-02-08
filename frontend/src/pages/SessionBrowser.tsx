@@ -1,5 +1,5 @@
 import { Box, Container, Typography, Paper, Chip, Alert, CircularProgress } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { useSessions } from '../hooks/useApi';
 import { useNavigate } from 'react-router-dom';
 import type { Session } from '../types/api';

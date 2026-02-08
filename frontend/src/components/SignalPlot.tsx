@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Paper, Typography, FormControl, InputLabel, Select, MenuItem, Alert, Chip } from '@mui/material';
 import * as echarts from 'echarts';
+import type { ECharts, EChartsOption } from 'echarts';
 import { useSignals, useLapSignals } from '../hooks/useApi';
 
 interface SignalPlotProps {
@@ -10,7 +11,7 @@ interface SignalPlotProps {
 
 export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): JSX.Element {
   const chartRef = useRef<HTMLDivElement>(null);
-  const chartInstanceRef = useRef<echarts.ECharts | null>(null);
+  const chartInstanceRef = useRef<ECharts | null>(null);
   const [selectedChannels, setSelectedChannels] = useState<string[]>(['Speed', 'Throttle', 'Brake']);
   const [useDistance, setUseDistance] = useState(false);
 
@@ -53,7 +54,7 @@ export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): J
       ]),
     }));
 
-    const option: echarts.EChartsOption = {
+    const option: EChartsOption = {
       title: {
         text: `Lap ${lapNumber} Signals`,
         left: 'center',

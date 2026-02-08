@@ -35,35 +35,21 @@ uv run mypy .                     # Type check
 uv run ruff check . && uv run mypy . && uv run pytest tests/ -q
 ```
 
-## Running Development Servers (for AGENTS)
+## Running Development Servers
 
-Use the provided PowerShell scripts to start and stop both servers from a single console:
+Start backend and frontend manually in separate terminals:
 
-```powershell
-# Start both servers (backend:8000, frontend:3000)
-.\start-servers.ps1
+```bash
+# Terminal 1 - Backend (port 8000)
+cd backend
+uv run uvicorn app.main:app --reload --port 8000
 
-# Stop both servers
-.\stop-servers.ps1
+# Terminal 2 - Frontend (port 3000)
+cd frontend
+npm run dev
 ```
 
-**Features:**
-- Logs written to `logs/backend.log` and `logs/frontend.log` every second
-- Previous logs are deleted when starting
-- Backend starts first, waits 5 seconds, then frontend starts
-- Process tracking via PowerShell jobs stored in `logs/.server-pids`
-
-**To check if servers are running:**
-```powershell
-Get-Job  # Shows running background jobs
-Get-NetTCPConnection -LocalPort 8000,3000  # Shows processes on server ports
-```
-
-**Log monitoring:**
-```powershell
-Get-Content logs/backend.log -Tail 20 -Wait    # Watch backend logs
-Get-Content logs/frontend.log -Tail 20 -Wait   # Watch frontend logs
-```
+Access the application at http://localhost:3000
 
 ## Code Style
 

@@ -1,10 +1,10 @@
-import { useQuery, useMutation, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, type UseQueryOptions } from '@tanstack/react-query';
 import {
   sessionsApi,
   signalsApi,
   segmentsApi,
   healthApi,
-} from './services';
+} from '../api/services';
 import type {
   SessionList,
   SessionDetail,
