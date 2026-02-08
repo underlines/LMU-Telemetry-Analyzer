@@ -32,6 +32,39 @@ class TrackLayout(BaseModel):
     reference_lap_number: int = Field(..., description="Lap used for detection")
     reference_session_id: str = Field(..., description="Session used for detection")
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "track_name": "Le Mans",
+                "track_layout": "24h",
+                "version": 1,
+                "track_length": 13629.0,
+                "segments": [
+                    {
+                        "segment_id": "T1",
+                        "segment_type": "corner",
+                        "start_dist": 350.0,
+                        "end_dist": 520.0,
+                        "entry_dist": 400.0,
+                        "apex_dist": 435.0,
+                        "exit_dist": 500.0
+                    },
+                    {
+                        "segment_id": "S1",
+                        "segment_type": "straight",
+                        "start_dist": 520.0,
+                        "end_dist": 1850.0,
+                        "entry_dist": None,
+                        "apex_dist": None,
+                        "exit_dist": None
+                    }
+                ],
+                "reference_lap_number": 5,
+                "reference_session_id": "session_2026-02-07_22-56-50"
+            }
+        }
+    }
+
 
 class SegmentMetrics(BaseModel):
     """Derived metrics for a single segment in a lap."""
@@ -78,6 +111,37 @@ class LapSegmentMetrics(BaseModel):
     track_length: float = Field(..., description="Track length in meters")
     total_time: float | None = Field(None, description="Total lap time")
     segments: list[SegmentMetrics] = Field(default_factory=list, description="Per-segment metrics")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "session_id": "session_2026-02-07_22-56-50",
+                "lap_number": 5,
+                "layout_version": 1,
+                "track_length": 13629.0,
+                "total_time": 215.4,
+                "segments": [
+                    {
+                        "segment_id": "T1",
+                        "lap_number": 5,
+                        "session_id": "session_2026-02-07_22-56-50",
+                        "entry_speed": 65.5,
+                        "mid_speed": 45.2,
+                        "exit_speed": 72.0,
+                        "min_speed": 42.8,
+                        "max_speed": 85.0,
+                        "segment_time": 4.2,
+                        "time_delta_to_reference": 0.15,
+                        "braking_distance": 25.0,
+                        "max_brake_pressure": 1.0,
+                        "throttle_application": 5.0,
+                        "steering_smoothness": 0.05,
+                        "avg_speed": 55.5
+                    }
+                ]
+            }
+        }
+    }
 
 
 class SegmentComparisonRequest(BaseModel):

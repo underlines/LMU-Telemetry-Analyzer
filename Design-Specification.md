@@ -155,6 +155,7 @@ Stabilize the backend with API doc and health endpoints before building the fron
 ### Outcome of Step 4a
 
 A reliable backend with auto-generated API documentation, health monitoring endpoints.
+Docs available at `/openapi.json`, `/docs` and `/redoc`
 
 ---
 

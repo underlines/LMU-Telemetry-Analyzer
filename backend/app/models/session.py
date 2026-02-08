@@ -14,6 +14,18 @@ class Lap(BaseModel):
     lap_time: float | None = Field(None, description="Lap time in seconds")
     valid: bool = Field(True, description="Whether the lap was valid (no off-track/cuts)")
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "lap_number": 3,
+                "start_time": 125.5,
+                "end_time": 229.3,
+                "lap_time": 103.8,
+                "valid": True
+            }
+        }
+    }
+
 
 class Session(BaseModel):
     """Represents a telemetry recording session from a single DuckDB file."""
@@ -42,12 +54,55 @@ class Session(BaseModel):
             return Path(v)
         return v
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "id": "session_2026-02-07_22-56-50",
+                "file_path": "/path/to/session.duckdb",
+                "recording_time": "2026-02-07T22:56:50Z",
+                "session_time": "22:56",
+                "session_type": "Practice",
+                "track_name": "Le Mans",
+                "track_layout": "24h",
+                "driver_name": "DriverName",
+                "car_name": "Toyota GR010 Hybrid",
+                "car_class": "Hypercar",
+                "weather_conditions": "Clear",
+                "lap_count": 12
+            }
+        }
+    }
+
 
 class SessionList(BaseModel):
     """Response model for listing sessions."""
 
     sessions: list[Session]
     total: int
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "sessions": [
+                    {
+                        "id": "session_2026-02-07_22-56-50",
+                        "file_path": "/path/to/session.duckdb",
+                        "recording_time": "2026-02-07T22:56:50Z",
+                        "session_time": "22:56",
+                        "session_type": "Practice",
+                        "track_name": "Le Mans",
+                        "track_layout": "24h",
+                        "driver_name": "DriverName",
+                        "car_name": "Toyota GR010 Hybrid",
+                        "car_class": "Hypercar",
+                        "weather_conditions": "Clear",
+                        "lap_count": 12
+                    }
+                ],
+                "total": 1
+            }
+        }
+    }
 
 
 class LapList(BaseModel):
@@ -56,6 +111,31 @@ class LapList(BaseModel):
     session_id: str
     laps: list[Lap]
     total: int
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "session_id": "session_2026-02-07_22-56-50",
+                "laps": [
+                    {
+                        "lap_number": 1,
+                        "start_time": 45.2,
+                        "end_time": 148.5,
+                        "lap_time": 103.3,
+                        "valid": True
+                    },
+                    {
+                        "lap_number": 2,
+                        "start_time": 148.5,
+                        "end_time": 251.0,
+                        "lap_time": 102.5,
+                        "valid": True
+                    }
+                ],
+                "total": 2
+            }
+        }
+    }
 
 
 class SessionDetail(Session):
@@ -67,3 +147,32 @@ class SessionDetail(Session):
     events: list[dict[str, Any]] = Field(
         default_factory=list, description="Available telemetry events"
     )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "id": "session_2026-02-07_22-56-50",
+                "file_path": "/path/to/session.duckdb",
+                "recording_time": "2026-02-07T22:56:50Z",
+                "session_time": "22:56",
+                "session_type": "Practice",
+                "track_name": "Le Mans",
+                "track_layout": "24h",
+                "driver_name": "DriverName",
+                "car_name": "Toyota GR010 Hybrid",
+                "car_class": "Hypercar",
+                "weather_conditions": "Clear",
+                "lap_count": 12,
+                "channels": [
+                    {"name": "Speed", "frequency": 60, "unit": "m/s"},
+                    {"name": "Throttle", "frequency": 60, "unit": "%"},
+                    {"name": "Brake", "frequency": 60, "unit": "%"},
+                    {"name": "Steering", "frequency": 60, "unit": "rad"}
+                ],
+                "events": [
+                    {"name": "Lap", "unit": ""},
+                    {"name": "Sector", "unit": ""}
+                ]
+            }
+        }
+    }

@@ -12,6 +12,18 @@ class SignalMetadata(BaseModel):
     min_value: float | None = Field(None, description="Minimum value in dataset")
     max_value: float | None = Field(None, description="Maximum value in dataset")
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "name": "Speed",
+                "frequency": 60,
+                "unit": "m/s",
+                "min_value": 0.0,
+                "max_value": 95.5
+            }
+        }
+    }
+
 
 class SignalData(BaseModel):
     """Raw signal data with timestamps and values."""
@@ -55,6 +67,31 @@ class SignalList(BaseModel):
     session_id: str
     signals: list[SignalMetadata]
     total: int
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "session_id": "session_2026-02-07_22-56-50",
+                "signals": [
+                    {
+                        "name": "Speed",
+                        "frequency": 60,
+                        "unit": "m/s",
+                        "min_value": 0.0,
+                        "max_value": 95.5
+                    },
+                    {
+                        "name": "Throttle",
+                        "frequency": 60,
+                        "unit": "%",
+                        "min_value": 0.0,
+                        "max_value": 1.0
+                    }
+                ],
+                "total": 2
+            }
+        }
+    }
 
 
 class SignalRequest(BaseModel):
