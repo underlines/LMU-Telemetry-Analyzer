@@ -5,7 +5,7 @@ Local-first telemetry analysis tool for Le Mans Ultimate (LMU) racing game.
 ## Tech Stack
 
 - **Backend**: Python 3.11+, FastAPI, uv only, no system wide python, DuckDB
-- **Frontend**: React + TypeScript (future)
+- **Frontend**: React + TypeScript (future) + Vite + MUI, Apache ECharts
 - **Testing**: pytest with TestClient for FastAPI
 
 ## Commands

@@ -171,7 +171,7 @@ Establish the frontend project foundation with type-safe client code consuming t
 
 ### Frontend focus (NEW)
 
-* **Project setup**: Initialize React + TypeScript project with Vite, configure strict TypeScript
+* **Project setup**: Initialize React + TypeScript + ECharts project with Vite, configure strict TypeScript
 * **Type generation**: Auto-generate TypeScript types from OpenAPI spec (consuming `/openapi.json` from 4a)
 * **API client**: Build typed API client layer (React Query or similar) with error handling
 * **Stub components**: Create placeholder components matching the target UI structure
@@ -191,7 +191,7 @@ Build the complete user interface on top of the stable backend and established c
 ### Frontend focus
 
 * **Session browser**: Search, filter, and select sessions with lap lists
-* **Signal visualization**: Interactive plots with time/distance axis switching, lap overlay
+* **Signal visualization**: Interactive Apache ECharts plots with time/distance axis switching, lap overlay
 * **Segment analysis**: Sortable segment table with metrics, time deltas, linking to plots
 * **UX polish**: Loading states, progress indicators, error boundaries, responsive layout
 * **Reduce coupling**: Basic state management, reusable components
