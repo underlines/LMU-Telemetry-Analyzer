@@ -4,7 +4,7 @@ Local-first telemetry analysis tool for Le Mans Ultimate (LMU) racing game.
 
 ## Tech Stack
 
-- **Backend**: Python 3.11+, FastAPI, uv, DuckDB
+- **Backend**: Python 3.11+, FastAPI, uv only, no system wide python, DuckDB
 - **Frontend**: React + TypeScript (future)
 - **Testing**: pytest with TestClient for FastAPI
 
@@ -15,6 +15,7 @@ Local-first telemetry analysis tool for Le Mans Ultimate (LMU) racing game.
 cd backend
 uv sync                           # Install dependencies
 uv add <package>                  # Add new dependency
+uv run python -c "..."            # Run python directly
 
 # Testing
 uv run pytest                     # Run all tests
