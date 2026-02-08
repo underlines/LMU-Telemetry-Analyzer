@@ -35,6 +35,36 @@ uv run mypy .                     # Type check
 uv run ruff check . && uv run mypy . && uv run pytest tests/ -q
 ```
 
+## Running Development Servers (for AGENTS)
+
+Use the provided PowerShell scripts to start and stop both servers from a single console:
+
+```powershell
+# Start both servers (backend:8000, frontend:3000)
+.\start-servers.ps1
+
+# Stop both servers
+.\stop-servers.ps1
+```
+
+**Features:**
+- Logs written to `logs/backend.log` and `logs/frontend.log` every second
+- Previous logs are deleted when starting
+- Backend starts first, waits 5 seconds, then frontend starts
+- Process tracking via PowerShell jobs stored in `logs/.server-pids`
+
+**To check if servers are running:**
+```powershell
+Get-Job  # Shows running background jobs
+Get-NetTCPConnection -LocalPort 8000,3000  # Shows processes on server ports
+```
+
+**Log monitoring:**
+```powershell
+Get-Content logs/backend.log -Tail 20 -Wait    # Watch backend logs
+Get-Content logs/frontend.log -Tail 20 -Wait   # Watch frontend logs
+```
+
 ## Code Style
 
 ### Python
