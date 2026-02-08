@@ -53,7 +53,7 @@ API docs: http://localhost:8000/docs
 ```bash
 cd frontend
 npm install
-npm run dev                      # Starts on http://localhost:5173
+npm run dev                      # Starts on http://localhost:3000
 ```
 
 Vite proxies `/api` to backend automatically.
@@ -78,8 +78,8 @@ Vite proxies `/api` to backend automatically.
 
 1. Place `.duckdb` telemetry files in the directory specified in `config.yaml`
 2. Start backend (`:8000`)
-3. Start frontend (`:5173`)
-4. Browse sessions at http://localhost:5173/sessions
+3. Start frontend (`:3000`)
+4. Browse sessions at http://localhost:3000/sessions
 
 ## Scripts
 
