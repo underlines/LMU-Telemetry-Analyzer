@@ -2,6 +2,7 @@
 nul
 *.duckdb
 cache/
+logs/
 
 # python
 *_cache
