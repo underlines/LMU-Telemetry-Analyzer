@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import sessions, signals
+from app.api import segments, sessions, signals
 
 app = FastAPI(
     title="LMU Telemetry Analyzer",
@@ -23,6 +23,7 @@ app.add_middleware(
 # Include routers
 app.include_router(sessions.router)
 app.include_router(signals.router)
+app.include_router(segments.router)
 
 
 @app.get("/health")

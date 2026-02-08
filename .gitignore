@@ -1,6 +1,7 @@
 # project
 nul
 *.duckdb
+cache/
 
 # python
 *_cache
