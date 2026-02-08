@@ -10,6 +10,7 @@ from typing import Any
 import duckdb
 
 from app.models.session import Lap, Session, SessionDetail
+from app.models.signal import SignalData, SignalMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -176,3 +177,183 @@ class DuckDBService:
             channels=self._get_channels(),
             events=self._get_events(),
         )
+
+    def get_channel_metadata(self, channel_name: str) -> SignalMetadata | None:
+        """Get metadata for a specific channel."""
+        try:
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT channelName, frequency, unit FROM channelsList WHERE channelName = ?",
+                    [channel_name],
+                ).fetchone()
+
+                if row:
+                    name, frequency, unit = row
+                    # Get min/max values from the channel table if it exists
+                    min_val: float | None = None
+                    max_val: float | None = None
+                    try:
+                        stats = conn.execute(
+                            f'SELECT MIN(value), MAX(value) FROM "{name}"'
+                        ).fetchone()
+                        if stats:
+                            min_val, max_val = stats
+                    except Exception:
+                        pass  # Table might not exist or be accessible
+
+                    return SignalMetadata(
+                        name=name,
+                        frequency=frequency,
+                        unit=unit,
+                        min_value=float(min_val) if min_val is not None else None,
+                        max_value=float(max_val) if max_val is not None else None,
+                    )
+        except Exception as e:
+            logger.warning(f"Could not get metadata for channel {channel_name}: {e}")
+        return None
+
+    def get_all_channel_metadata(self) -> list[SignalMetadata]:
+        """Get metadata for all available channels."""
+        metadata_list: list[SignalMetadata] = []
+        channels = self._get_channels()
+
+        for channel_info in channels:
+            name = channel_info["name"]
+            metadata = self.get_channel_metadata(name)
+            if metadata:
+                metadata_list.append(metadata)
+
+        return metadata_list
+
+    def _get_table_columns(self, table_name: str) -> list[str]:
+        """Get list of columns for a table."""
+        columns: list[str] = []
+        try:
+            with self._connect() as conn:
+                rows = conn.execute(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = ? ORDER BY ordinal_position",
+                    [table_name],
+                ).fetchall()
+                columns = [row[0] for row in rows]
+        except Exception as e:
+            logger.warning(f"Could not get columns for table {table_name}: {e}")
+        return columns
+
+    def get_signal_data(
+        self,
+        channel_name: str,
+        start_time: float | None = None,
+        end_time: float | None = None,
+        max_points: int | None = None,
+    ) -> SignalData:
+        """Retrieve signal data for a channel, optionally filtered by time range.
+
+        Args:
+            channel_name: Name of the channel/signal to retrieve
+            start_time: Optional start time filter (session time in seconds)
+            end_time: Optional end time filter (session time in seconds)
+            max_points: Optional maximum number of points (for downsampling)
+
+        Returns:
+            SignalData with timestamps and values
+        """
+        timestamps: list[float] = []
+        values: list[float] = []
+        unit: str | None = None
+
+        try:
+            with self._connect() as conn:
+                # Get unit from channelsList
+                row = conn.execute(
+                    "SELECT unit FROM channelsList WHERE channelName = ?",
+                    [channel_name],
+                ).fetchone()
+                if row:
+                    unit = row[0]
+
+                # Check if table has timestamp column
+                columns = self._get_table_columns(channel_name)
+                has_timestamp = "ts" in columns
+
+                if not has_timestamp:
+                    # Table without timestamp - just get all values with dummy timestamps
+                    query = f'SELECT value FROM "{channel_name}"'
+                    rows = conn.execute(query).fetchall()
+                    values = [float(row[0]) for row in rows]
+                    # Generate sequential timestamps
+                    timestamps = [float(i) for i in range(len(values))]
+                else:
+                    # Build query with optional time filtering
+                    query = f'SELECT ts, value FROM "{channel_name}"'
+                    params: list[Any] = []
+
+                    if start_time is not None or end_time is not None:
+                        conditions = []
+                        if start_time is not None:
+                            conditions.append("ts >= ?")
+                            params.append(start_time)
+                        if end_time is not None:
+                            conditions.append("ts <= ?")
+                            params.append(end_time)
+                        query += " WHERE " + " AND ".join(conditions)
+
+                    query += " ORDER BY ts"
+
+                    rows = conn.execute(query, params).fetchall()
+                    timestamps = [float(row[0]) for row in rows]
+                    values = [float(row[1]) for row in rows]
+
+                    # Apply downsampling if max_points specified and data is larger
+                    if max_points is not None and max_points > 0 and len(values) > max_points:
+                        step = len(values) // max_points
+                        if step > 1:
+                            timestamps = timestamps[::step]
+                            values = values[::step]
+
+        except Exception as e:
+            logger.error(f"Error retrieving signal data for {channel_name}: {e}")
+            raise
+
+        return SignalData(
+            channel=channel_name,
+            timestamps=timestamps,
+            values=values,
+            unit=unit,
+        )
+
+    def channel_exists(self, channel_name: str) -> bool:
+        """Check if a channel exists in the database."""
+        try:
+            with self._connect() as conn:
+                result = conn.execute(
+                    "SELECT 1 FROM channelsList WHERE channelName = ?",
+                    [channel_name],
+                ).fetchone()
+                return result is not None
+        except Exception as e:
+            logger.warning(f"Error checking if channel exists {channel_name}: {e}")
+            return False
+
+    def get_distance_data(
+        self,
+        start_time: float | None = None,
+        end_time: float | None = None,
+        max_points: int | None = None,
+    ) -> SignalData | None:
+        """Retrieve distance traveled data if available.
+
+        Distance is typically stored in a channel like 'Distance' or 'LapDistance'.
+        """
+        # Common distance channel names in racing telemetry
+        distance_channels = ["Distance", "LapDistance", "mTotalDistance", "LapDist"]
+
+        for channel in distance_channels:
+            if self.channel_exists(channel):
+                try:
+                    return self.get_signal_data(channel, start_time, end_time, max_points)
+                except Exception as e:
+                    logger.warning(f"Could not retrieve distance from {channel}: {e}")
+                    continue
+
+        return None
