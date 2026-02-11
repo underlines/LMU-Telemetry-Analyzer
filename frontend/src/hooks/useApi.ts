@@ -33,7 +33,7 @@ const queryKeys = {
     all: ['signals'] as const,
     list: (sessionId: string) => [...queryKeys.signals.all, 'list', sessionId] as const,
     lap: (sessionId: string, lapNumber: number, channels: string[]) =>
-      [...queryKeys.signals.all, 'lap', sessionId, lapNumber, channels] as const,
+      [...queryKeys.signals.all, 'lap', sessionId, lapNumber, [...channels].sort().join(',')] as const,
     compare: (sessionId: string, targetLap: number, referenceLap: number) =>
       [...queryKeys.signals.all, 'compare', sessionId, targetLap, referenceLap] as const,
   },

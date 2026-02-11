@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Paper, Typography, FormControl, InputLabel, Select, MenuItem, Alert, Chip } from '@mui/material';
 import * as echarts from 'echarts';
 import type { ECharts, EChartsOption } from 'echarts';
@@ -12,21 +12,41 @@ interface SignalPlotProps {
 export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): JSX.Element {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<ECharts | null>(null);
-  const [selectedChannels, setSelectedChannels] = useState<string[]>(['Speed', 'Throttle', 'Brake']);
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [useDistance, setUseDistance] = useState(false);
 
   const { data: signalsList } = useSignals(sessionId);
-  const { data: signalData, isLoading } = useLapSignals(
+
+  // Compute default channels from available signals
+  const defaultChannels = useMemo(() => {
+    if (signalsList?.signals && signalsList.signals.length > 0) {
+      return signalsList.signals.slice(0, 3).map((s) => s.name);
+    }
+    return [];
+  }, [signalsList]);
+
+  // Use selected channels if user has made a selection, otherwise use defaults
+  const channelsToFetch = selectedChannels.length > 0 ? selectedChannels : defaultChannels;
+
+  const { data: signalData, isLoading, isFetching } = useLapSignals(
     sessionId,
     lapNumber,
-    selectedChannels,
+    channelsToFetch,
     { normalizeTime: true, useDistance }
   );
 
-  // Initialize chart
+  // Initialize chart once on mount
   useEffect(() => {
     if (chartRef.current && !chartInstanceRef.current) {
-      chartInstanceRef.current = echarts.init(chartRef.current);
+      try {
+        chartInstanceRef.current = echarts.init(chartRef.current);
+        // Force initial resize to get proper dimensions
+        setTimeout(() => {
+          chartInstanceRef.current?.resize();
+        }, 100);
+      } catch (e) {
+        console.error('Failed to initialize ECharts:', e);
+      }
     }
 
     return () => {
@@ -39,7 +59,16 @@ export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): J
 
   // Update chart when data changes
   useEffect(() => {
-    if (!chartInstanceRef.current || !signalData) return;
+    if (!chartInstanceRef.current) return;
+
+    if (!signalData || signalData.length === 0) {
+      // Clear chart when no data
+      chartInstanceRef.current.clear();
+      return;
+    }
+
+    // Resize before setting options to ensure proper dimensions
+    chartInstanceRef.current.resize();
 
     const series = signalData.map((slice) => ({
       name: slice.channel,
@@ -113,6 +142,8 @@ export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): J
   }, []);
 
   const availableChannels = signalsList?.signals.map((s) => s.name) || [];
+  const hasData = signalData && signalData.length > 0;
+  const showInitialPrompt = channelsToFetch.length === 0;
 
   return (
     <Box>
@@ -155,13 +186,43 @@ export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): J
         </FormControl>
       </Box>
 
-      {isLoading ? (
-        <Alert severity="info">Loading signal data...</Alert>
-      ) : (
-        <Paper elevation={2}>
-          <Box ref={chartRef} sx={{ width: '100%', height: 500 }} />
-        </Paper>
-      )}
+      <Paper elevation={2} sx={{ position: 'relative' }}>
+        {/* Chart container - always rendered */}
+        <Box
+          ref={chartRef}
+          sx={{
+            width: '100%',
+            height: 500,
+            display: hasData ? 'block' : 'none',
+          }}
+        />
+
+        {/* Overlay for loading/no data states */}
+        {!hasData && (
+          <Box
+            sx={{
+              width: '100%',
+              height: 500,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 3,
+            }}
+          >
+            {showInitialPrompt ? (
+              <Alert severity="info">
+                Select channels from the dropdown above to view signal plots.
+              </Alert>
+            ) : isLoading || isFetching ? (
+              <Alert severity="info">Loading signal data...</Alert>
+            ) : (
+              <Alert severity="warning">
+                No data available for selected channels. The channels may not exist in this session.
+              </Alert>
+            )}
+          </Box>
+        )}
+      </Paper>
 
       <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
         Tip: Scroll to zoom, drag to pan. Click legend to toggle channels.
