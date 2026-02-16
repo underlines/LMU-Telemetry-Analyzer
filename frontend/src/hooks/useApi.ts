@@ -32,8 +32,8 @@ const queryKeys = {
   signals: {
     all: ['signals'] as const,
     list: (sessionId: string) => [...queryKeys.signals.all, 'list', sessionId] as const,
-    lap: (sessionId: string, lapNumber: number, channels: string[]) =>
-      [...queryKeys.signals.all, 'lap', sessionId, lapNumber, [...channels].sort().join(',')] as const,
+    lap: (sessionId: string, lapNumber: number, channels: string[], samplingPercent?: number) =>
+      [...queryKeys.signals.all, 'lap', sessionId, lapNumber, [...channels].sort().join(','), samplingPercent ?? 20] as const,
     compare: (sessionId: string, targetLap: number, referenceLap: number) =>
       [...queryKeys.signals.all, 'compare', sessionId, targetLap, referenceLap] as const,
   },
@@ -106,18 +106,18 @@ export const useLapSignals = (
   options?: {
     normalizeTime?: boolean;
     useDistance?: boolean;
-    maxPoints?: number;
+    samplingPercent?: number;
   } & UseQueryOptions<SignalSlice[], Error>
 ) => {
-  const { normalizeTime, useDistance, maxPoints, ...queryOptions } = options || {};
+  const { normalizeTime, useDistance, samplingPercent, ...queryOptions } = options || {};
 
   return useQuery<SignalSlice[], Error>({
-    queryKey: queryKeys.signals.lap(sessionId, lapNumber, channels),
+    queryKey: queryKeys.signals.lap(sessionId, lapNumber, channels, samplingPercent),
     queryFn: () =>
       signalsApi.getLapSignals(sessionId, lapNumber, channels, {
         normalizeTime,
         useDistance,
-        maxPoints,
+        samplingPercent,
       }),
     enabled: !!sessionId && !!channels.length,
     ...queryOptions,

@@ -45,7 +45,7 @@ async def get_lap_signals(
     channels: list[str] = Query(..., description="Channel names to retrieve"),
     normalize_time: bool = Query(True, description="Normalize time to lap start"),
     use_distance: bool = Query(False, description="Use distance for X-axis"),
-    max_points: int | None = Query(None, ge=1, description="Maximum points (downsampling)"),
+    sampling_percent: int = Query(20, ge=1, le=100, description="Sampling percentage (1-100%)")
 ) -> list[SignalSlice]:
     """Get signal data for specific channels within a lap."""
     try:
@@ -55,7 +55,7 @@ async def get_lap_signals(
             channels=channels,
             normalize_time=normalize_time,
             use_distance=use_distance,
-            max_points=max_points,
+            sampling_percent=sampling_percent,
         )
         return slices
     except ValueError as e:

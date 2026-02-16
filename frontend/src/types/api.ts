@@ -67,6 +67,7 @@ export interface SignalSlice {
   distance?: number[];
   unit?: string;
   sampling_rate: number;
+  total_samples: number;
 }
 
 export interface SignalList {

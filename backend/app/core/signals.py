@@ -50,7 +50,7 @@ class SignalService:
         channels: list[str],
         normalize_time: bool = True,
         use_distance: bool = False,
-        max_points: int | None = None,
+        sampling_percent: int = 20,
     ) -> list[SignalSlice]:
         """Retrieve signal data for specific channels within a lap.
 
@@ -60,7 +60,7 @@ class SignalService:
             channels: List of channel names to fetch
             normalize_time: Whether to normalize timestamps to lap start
             use_distance: Whether to use distance for X-axis instead of time
-            max_points: Maximum points per signal (downsampling)
+            sampling_percent: Sampling percentage (1-100) for downsampling
 
         Returns:
             List of SignalSlice objects
@@ -69,15 +69,52 @@ class SignalService:
         laps = service.get_laps()
         lap = self._find_lap(laps, lap_number)
 
-        slices: list[SignalSlice] = []
+        # Calculate lap duration for sample count estimation
+        lap_duration = 0.0
+        if lap.end_time is not None:
+            lap_duration = lap.end_time - lap.start_time
+        elif lap.lap_time is not None and lap.lap_time > 0:
+            lap_duration = lap.lap_time
+        else:
+            # Estimate from average lap time of other laps
+            valid_lap_times = [l.lap_time for l in laps if l.lap_time and l.lap_time > 0]
+            if valid_lap_times:
+                lap_duration = sum(valid_lap_times) / len(valid_lap_times)
+
+        # Get metadata for all channels to calculate max sample count
+        max_samples = 0
+        channel_metadata: dict[str, tuple[float, str | None]] = {}  # frequency, unit
 
         for channel in channels:
             if not service.channel_exists(channel):
                 logger.warning(f"Channel {channel} not found in session {session_id}")
                 continue
+            try:
+                metadata = service.get_channel_metadata(channel)
+                if metadata:
+                    freq = metadata.frequency
+                    # Calculate expected samples for this channel in this lap
+                    expected_samples = int(lap_duration * freq)
+                    channel_metadata[channel] = (freq, metadata.unit)
+                    if expected_samples > max_samples:
+                        max_samples = expected_samples
+            except Exception as e:
+                logger.error(f"Error getting metadata for {channel}: {e}")
+                continue
+
+        # Calculate max_points from sampling percentage
+        max_points: int | None = None
+        if max_samples > 0 and sampling_percent < 100:
+            max_points = max(1, int(max_samples * sampling_percent / 100))
+
+        # Fetch data with consistent downsampling
+        slices: list[SignalSlice] = []
+        for channel in channels:
+            if channel not in channel_metadata:
+                continue
 
             try:
-                # Get signal data for the lap time range
+                # Get signal data with downsampling
                 signal_data = service.get_signal_data(
                     channel_name=channel,
                     start_time=lap.start_time,
@@ -96,15 +133,13 @@ class SignalService:
                     if dist_signal:
                         distance_data = dist_signal.values
 
-                # Calculate normalized time
+                # Calculate normalized time (relative to lap start)
                 normalized_time: list[float] = []
-                if normalize_time and signal_data.timestamps:
+                if signal_data.timestamps:
                     start = signal_data.timestamps[0]
                     normalized_time = [t - start for t in signal_data.timestamps]
-                else:
-                    normalized_time = signal_data.timestamps
 
-                # Calculate actual sampling rate
+                # Calculate actual sampling rate from returned data
                 sampling_rate = 0
                 if len(signal_data.timestamps) > 1:
                     duration = signal_data.timestamps[-1] - signal_data.timestamps[0]
@@ -122,6 +157,7 @@ class SignalService:
                         distance=distance_data,
                         unit=signal_data.unit,
                         sampling_rate=sampling_rate,
+                        total_samples=signal_data.total_samples,
                     )
                 )
 
@@ -151,6 +187,35 @@ class SignalService:
         target_lap = self._find_lap(laps, request.target_lap)
         reference_lap = self._find_lap(laps, request.reference_lap)
 
+        # Calculate max sample count across both laps for consistent downsampling
+        target_duration = (
+            target_lap.end_time - target_lap.start_time
+            if target_lap.end_time
+            else (target_lap.lap_time or 0)
+        )
+        ref_duration = (
+            reference_lap.end_time - reference_lap.start_time
+            if reference_lap.end_time
+            else (reference_lap.lap_time or 0)
+        )
+        max_duration = max(target_duration, ref_duration)
+
+        # Get max frequency across all channels to calculate max samples
+        max_samples = 0
+        for channel in request.channels:
+            if not service.channel_exists(channel):
+                continue
+            metadata = service.get_channel_metadata(channel)
+            if metadata:
+                expected_samples = int(max_duration * metadata.frequency)
+                if expected_samples > max_samples:
+                    max_samples = expected_samples
+
+        # Calculate max_points from sampling percentage
+        max_points: int | None = None
+        if max_samples > 0 and request.sampling_percent < 100:
+            max_points = max(1, int(max_samples * request.sampling_percent / 100))
+
         comparisons: list[LapComparison] = []
 
         for channel in request.channels:
@@ -164,14 +229,14 @@ class SignalService:
                     channel_name=channel,
                     start_time=target_lap.start_time,
                     end_time=target_lap.end_time,
-                    max_points=request.max_points,
+                    max_points=max_points,
                 )
 
                 reference_data = service.get_signal_data(
                     channel_name=channel,
                     start_time=reference_lap.start_time,
                     end_time=reference_lap.end_time,
-                    max_points=request.max_points,
+                    max_points=max_points,
                 )
 
                 # Get distance data if requested
@@ -181,12 +246,12 @@ class SignalService:
                     target_dist = service.get_distance_data(
                         start_time=target_lap.start_time,
                         end_time=target_lap.end_time,
-                        max_points=request.max_points,
+                        max_points=max_points,
                     )
                     reference_dist = service.get_distance_data(
                         start_time=reference_lap.start_time,
                         end_time=reference_lap.end_time,
-                        max_points=request.max_points,
+                        max_points=max_points,
                     )
                     if target_dist:
                         target_distance = target_dist.values

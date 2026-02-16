@@ -194,3 +194,13 @@ From `pyproject.toml`:
 - Quote style: double
 - Indent: spaces
 - Strict mypy enabled
+
+## DuckDB Schema Notes
+
+**Channel Tables**: Telemetry channels (e.g., `"Brake Pos"`, `"Engine RPM"`) have NO `ts` timestamp column. They contain only a single `value` column with sequentially sampled data.
+
+**Time Mapping**: Each channel has a `frequency` (Hz) in `channelsList`. Sample index = `session_time * frequency`. For example, 50Hz channel at session time 100s = sample index 5000.
+
+**Lap Timing**: `Lap` table has `ts` (session time) and `value` (lap number) columns. Use lap start/end times to calculate sample index ranges.
+
+**Query Pattern**: Fetch lap-specific samples with `LIMIT {count} OFFSET {start_idx}` where `start_idx = lap_start_time * frequency`.

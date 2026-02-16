@@ -34,6 +34,7 @@ class SignalData(BaseModel):
     )
     values: list[float] = Field(default_factory=list, description="Signal values")
     unit: str | None = Field(None, description="Unit of measurement")
+    total_samples: int = Field(0, description="Original sample count before downsampling")
 
 
 class SignalSlice(BaseModel):
@@ -59,6 +60,7 @@ class SignalSlice(BaseModel):
 
     unit: str | None = Field(None, description="Unit of measurement")
     sampling_rate: int = Field(0, description="Actual sampling rate of this slice")
+    total_samples: int = Field(0, description="Original sample count before downsampling")
 
 
 class SignalList(BaseModel):
@@ -121,8 +123,8 @@ class LapComparisonRequest(BaseModel):
     use_distance: bool = Field(
         False, description="Whether to use distance instead of time for X-axis"
     )
-    max_points: int | None = Field(
-        None, description="Maximum number of points per lap (for downsampling)"
+    sampling_percent: int = Field(
+        20, ge=1, le=100, description="Sampling percentage (1-100%) for downsampling"
     )
 
 

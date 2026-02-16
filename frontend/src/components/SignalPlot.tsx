@@ -9,11 +9,15 @@ interface SignalPlotProps {
   lapNumber: number;
 }
 
+// Sampling percentage options
+const SAMPLING_OPTIONS = [1, 5, 20, 50, 80, 95, 100];
+
 export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): JSX.Element {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<ECharts | null>(null);
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [useDistance, setUseDistance] = useState(false);
+  const [samplingPercent, setSamplingPercent] = useState(20);
 
   const { data: signalsList } = useSignals(sessionId);
 
@@ -32,7 +36,7 @@ export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): J
     sessionId,
     lapNumber,
     channelsToFetch,
-    { normalizeTime: true, useDistance }
+    { normalizeTime: true, useDistance, samplingPercent }
   );
 
   // Initialize chart once on mount
@@ -145,6 +149,17 @@ export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): J
   const hasData = signalData && signalData.length > 0;
   const showInitialPrompt = channelsToFetch.length === 0;
 
+  // Calculate sampling info from the highest-count channel
+  const samplingInfo = useMemo(() => {
+    if (!signalData || signalData.length === 0) {
+      return { maxTotal: 0, currentSamples: 0 };
+    }
+    const maxTotal = Math.max(...signalData.map((s) => s.total_samples));
+    // Get samples from the channel with max total_samples
+    const maxChannel = signalData.find((s) => s.total_samples === maxTotal);
+    return { maxTotal, currentSamples: maxChannel?.values.length ?? 0 };
+  }, [signalData]);
+
   return (
     <Box>
       <Box display="flex" gap={2} mb={2} flexWrap="wrap">
@@ -184,9 +199,43 @@ export default function SignalPlot({ sessionId, lapNumber }: SignalPlotProps): J
             <MenuItem value="distance">Distance (meters)</MenuItem>
           </Select>
         </FormControl>
+
+        <FormControl sx={{ minWidth: 150 }}>
+          <InputLabel id="sampling-label">Sampling</InputLabel>
+          <Select
+            labelId="sampling-label"
+            value={samplingPercent}
+            label="Sampling"
+            onChange={(e) => setSamplingPercent(Number(e.target.value))}
+          >
+            {SAMPLING_OPTIONS.map((percent) => (
+              <MenuItem key={percent} value={percent}>
+                {percent}%
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       <Paper elevation={2} sx={{ position: 'relative' }}>
+        {/* Sampling info label */}
+        {hasData && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 16,
+              zIndex: 1,
+              backgroundColor: 'background.paper',
+              px: 1,
+              borderRadius: 1,
+            }}
+          >
+            Sampling: {samplingPercent}% ({samplingInfo.currentSamples.toLocaleString()} of {samplingInfo.maxTotal.toLocaleString()} samples)
+          </Typography>
+        )}
         {/* Chart container - always rendered */}
         <Box
           ref={chartRef}

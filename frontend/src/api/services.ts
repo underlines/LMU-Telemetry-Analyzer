@@ -46,7 +46,7 @@ export const signalsApi = {
     options?: {
       normalizeTime?: boolean;
       useDistance?: boolean;
-      maxPoints?: number;
+      samplingPercent?: number;
     }
   ): Promise<SignalSlice[]> => {
     const params = new URLSearchParams();
@@ -57,9 +57,9 @@ export const signalsApi = {
     if (options?.useDistance !== undefined) {
       params.append('use_distance', String(options.useDistance));
     }
-    if (options?.maxPoints !== undefined) {
-      params.append('max_points', String(options.maxPoints));
-    }
+    // Default sampling to 20%
+    const samplingPercent = options?.samplingPercent ?? 20;
+    params.append('sampling_percent', String(samplingPercent));
 
     const response = await apiClient.get<SignalSlice[]>(
       `/signals/sessions/${sessionId}/laps/${lapNumber}?${params.toString()}`

@@ -261,55 +261,87 @@ class DuckDBService:
         timestamps: list[float] = []
         values: list[float] = []
         unit: str | None = None
+        total_samples = 0
 
         try:
             with self._connect() as conn:
-                # Get unit from channelsList
+                # Get channel metadata (frequency and unit)
                 row = conn.execute(
-                    "SELECT unit FROM channelsList WHERE channelName = ?",
+                    "SELECT frequency, unit FROM channelsList WHERE channelName = ?",
                     [channel_name],
                 ).fetchone()
-                if row:
-                    unit = row[0]
+                if not row:
+                    raise ValueError(f"Channel {channel_name} not found in channelsList")
 
-                # Check if table has timestamp column
-                columns = self._get_table_columns(channel_name)
-                has_timestamp = "ts" in columns
+                frequency_val, unit = row
+                frequency = float(frequency_val) if frequency_val is not None else 1.0
 
-                if not has_timestamp:
-                    # Table without timestamp - just get all values with dummy timestamps
-                    query = f'SELECT value FROM "{channel_name}"'
+                # Calculate sample indices from time range
+                start_idx = 0
+                end_idx: int | None = None
+
+                if start_time is not None:
+                    start_idx = int(start_time * frequency)
+                    if start_idx < 0:
+                        start_idx = 0
+
+                if end_time is not None:
+                    end_idx = int(end_time * frequency)
+
+                # Get total row count for this lap
+                count_result = conn.execute(
+                    f'SELECT COUNT(*) FROM "{channel_name}"'
+                ).fetchone()
+                total_in_table = count_result[0] if count_result else 0
+
+                # Calculate actual end index
+                actual_end_idx = end_idx if end_idx is not None else total_in_table
+                if actual_end_idx > total_in_table:
+                    actual_end_idx = total_in_table
+
+                # Calculate number of samples in this range
+                samples_in_range = actual_end_idx - start_idx
+                if samples_in_range < 0:
+                    samples_in_range = 0
+
+                total_samples = samples_in_range
+
+                # Determine if we need downsampling
+                needs_downsampling = (
+                    max_points is not None
+                    and max_points > 0
+                    and samples_in_range > max_points
+                )
+
+                if needs_downsampling and max_points is not None:
+                    # Calculate step for downsampling
+                    step = samples_in_range // max_points
+                    if step < 1:
+                        step = 1
+
+                    # Get all values in range, then downsample in Python
+                    # LIMIT should be the count of rows, not the end index
+                    limit = actual_end_idx - start_idx
+                    query = f'SELECT value FROM "{channel_name}" LIMIT {limit} OFFSET {start_idx}'
+                    rows = conn.execute(query).fetchall()
+
+                    # Downsample in Python by taking every Nth value
+                    downsampled_values = []
+                    for i, row in enumerate(rows):
+                        if i % step == 0:
+                            downsampled_values.append(float(row[0]))
+
+                    values = downsampled_values
+                    # Generate timestamps from sample indices
+                    timestamps = [start_idx / frequency + (i * step) / frequency for i in range(len(values))]
+                else:
+                    # No downsampling needed - get all values in range
+                    limit = actual_end_idx - start_idx
+                    query = f'SELECT value FROM "{channel_name}" LIMIT {limit} OFFSET {start_idx}'
                     rows = conn.execute(query).fetchall()
                     values = [float(row[0]) for row in rows]
-                    # Generate sequential timestamps
-                    timestamps = [float(i) for i in range(len(values))]
-                else:
-                    # Build query with optional time filtering
-                    query = f'SELECT ts, value FROM "{channel_name}"'
-                    params: list[Any] = []
-
-                    if start_time is not None or end_time is not None:
-                        conditions = []
-                        if start_time is not None:
-                            conditions.append("ts >= ?")
-                            params.append(start_time)
-                        if end_time is not None:
-                            conditions.append("ts <= ?")
-                            params.append(end_time)
-                        query += " WHERE " + " AND ".join(conditions)
-
-                    query += " ORDER BY ts"
-
-                    rows = conn.execute(query, params).fetchall()
-                    timestamps = [float(row[0]) for row in rows]
-                    values = [float(row[1]) for row in rows]
-
-                    # Apply downsampling if max_points specified and data is larger
-                    if max_points is not None and max_points > 0 and len(values) > max_points:
-                        step = len(values) // max_points
-                        if step > 1:
-                            timestamps = timestamps[::step]
-                            values = values[::step]
+                    # Generate timestamps from sample indices
+                    timestamps = [start_idx / frequency + i / frequency for i in range(len(values))]
 
         except Exception as e:
             logger.error(f"Error retrieving signal data for {channel_name}: {e}")
@@ -320,6 +352,7 @@ class DuckDBService:
             timestamps=timestamps,
             values=values,
             unit=unit,
+            total_samples=total_samples,
         )
 
     def channel_exists(self, channel_name: str) -> bool:
