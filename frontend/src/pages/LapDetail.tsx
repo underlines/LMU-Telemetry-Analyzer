@@ -4,7 +4,6 @@ import {
   Container,
   Typography,
   Paper,
-  Grid,
   Button,
   Alert,
   CircularProgress,
@@ -47,11 +46,16 @@ export default function LapDetail(): JSX.Element {
   const lapNum = parseInt(lapNumber || '0', 10);
 
   const { data: session } = useSession(sessionId || '');
-  const { data: segments, isLoading: segmentsLoading } = useLapSegments(
-    sessionId || '',
-    lapNum
-  );
-  const { data: layout, isLoading: layoutLoading } = useTrackLayout(sessionId || '');
+  const {
+    data: segments,
+    isLoading: segmentsLoading,
+    error: segmentsError,
+  } = useLapSegments(sessionId || '', lapNum);
+  const {
+    data: layout,
+    isLoading: layoutLoading,
+    error: layoutError,
+  } = useTrackLayout(sessionId || '');
 
   const handleBack = (): void => {
     navigate(`/sessions/${sessionId}`);
@@ -59,6 +63,12 @@ export default function LapDetail(): JSX.Element {
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number): void => {
     setActiveTab(newValue);
+  };
+
+  // Helper to format error messages
+  const getErrorMessage = (error: Error | null): string => {
+    if (!error) return 'Unknown error';
+    return error.message || 'An unexpected error occurred';
   };
 
   return (
@@ -94,6 +104,24 @@ export default function LapDetail(): JSX.Element {
           {segmentsLoading || layoutLoading ? (
             <Box display="flex" justifyContent="center" p={4}>
               <CircularProgress />
+            </Box>
+          ) : segmentsError || layoutError ? (
+            <Box p={4}>
+              <Alert severity="error" sx={{ mb: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Error Loading Segment Data
+                </Typography>
+                {segmentsError && (
+                  <Typography variant="body2">
+                    Segments: {getErrorMessage(segmentsError)}
+                  </Typography>
+                )}
+                {layoutError && (
+                  <Typography variant="body2">
+                    Layout: {getErrorMessage(layoutError)}
+                  </Typography>
+                )}
+              </Alert>
             </Box>
           ) : (
             <SegmentTable segments={segments} layout={layout} />

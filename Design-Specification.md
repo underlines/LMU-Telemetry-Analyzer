@@ -67,7 +67,7 @@ Enable **interactive inspection** of telemetry signals and basic lap comparison.
 * Serve requested signals for a given lap with optional downsampling
 * Support retrieving multiple laps for comparison
 * Perform time-based alignment with normalized timestamps
-* Support distance-based X-axis using LapDist normalization
+* Support distance-based X-axis using Lap Dist normalization
 
 ### Frontend responsibilities
 
@@ -103,7 +103,7 @@ Introduce **domain interpretation** by structuring telemetry into meaningful dri
   - Corners (high curvature zones with entry/apex/exit points)
   - Straights (gaps between corners)
   - Complexes (adjacent corners merged)
-* **Normalize LapDist** to monotonic 0..track_length coordinates (handles wrap-around)
+* **Normalize Lap Dist** to monotonic 0..track_length coordinates (handles wrap-around)
 * **Compute derived metrics per segment**:
   - Speed: entry, mid, exit, min, max, average
   - Time: segment duration, delta to reference lap

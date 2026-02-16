@@ -59,7 +59,7 @@ class TrackLayoutService:
             brake_signal: Brake pressure signal
             throttle_signal: Throttle position signal
             speed_signal: Speed signal
-            lap_dist_signal: LapDist signal (will be normalized)
+            lap_dist_signal: Lap Dist signal (will be normalized)
             lap_number: Reference lap number
             session_id: Reference session ID
 
@@ -67,7 +67,7 @@ class TrackLayoutService:
             TrackLayout with detected segments
         """
         if lap_dist_signal is None or not lap_dist_signal.values:
-            raise ValueError("LapDist signal is required for layout detection")
+            raise ValueError("Lap Dist signal is required for layout detection")
 
         # Normalize distance
         normalized = self.distance_normalizer.normalize(lap_dist_signal.values)

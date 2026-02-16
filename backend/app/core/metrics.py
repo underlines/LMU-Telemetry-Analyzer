@@ -50,12 +50,16 @@ class MetricsCalculator:
         Returns:
             LapSegmentMetrics with per-segment data
         """
-        # Get LapDist and normalize
-        lap_dist_signal = signals.get("LapDist")
+        # Get Lap Dist and normalize with lap start offset
+        lap_dist_signal = signals.get("Lap Dist")
         if lap_dist_signal is None:
-            raise ValueError("LapDist signal required for metrics calculation")
+            raise ValueError("Lap Dist signal required for metrics calculation")
 
-        normalized = self.distance_normalizer.normalize(lap_dist_signal.values)
+        # Normalize distance so lap starts at 0
+        lap_start_offset = -lap_dist_signal.values[0] if lap_dist_signal.values else 0.0
+        normalized = self.distance_normalizer.normalize(
+            lap_dist_signal.values, lap_start_offset=lap_start_offset
+        )
 
         # Calculate metrics for each segment
         segment_metrics = []
@@ -66,6 +70,7 @@ class MetricsCalculator:
                 segment=segment,
                 normalized=normalized,
                 signals=signals,
+                lap_dist_signal=lap_dist_signal,
             )
             segment_metrics.append(metrics)
             total_segment_time += metrics.segment_time
@@ -90,6 +95,7 @@ class MetricsCalculator:
         segment: Segment,
         normalized: NormalizedDistance,
         signals: dict[str, SignalSlice],
+        lap_dist_signal: SignalSlice,
     ) -> SegmentMetrics:
         """Calculate metrics for a single segment."""
         # Find indices for segment boundaries
@@ -123,22 +129,22 @@ class MetricsCalculator:
             )
 
         # Extract signal values for this segment
-        speed_values = self._extract_values(signals.get("Speed"), indices)
-        brake_values = self._extract_values(signals.get("Brake"), indices)
-        throttle_values = self._extract_values(signals.get("Throttle"), indices)
-        steering_values = self._extract_values(signals.get("Steering"), indices)
+        speed_values = self._extract_values(signals.get("Ground Speed"), indices)
+        brake_values = self._extract_values(signals.get("Brake Pos"), indices)
+        throttle_values = self._extract_values(signals.get("Throttle Pos"), indices)
+        steering_values = self._extract_values(signals.get("Steering Pos"), indices)
 
         # Speed metrics
-        entry_speed = self._get_speed_at_distance(signals.get("Speed"), normalized, segment.start_dist)
+        entry_speed = self._get_speed_at_distance(signals.get("Ground Speed"), normalized, segment.start_dist)
         mid_dist = (segment.start_dist + segment.end_dist) / 2
-        mid_speed = self._get_speed_at_distance(signals.get("Speed"), normalized, mid_dist)
-        exit_speed = self._get_speed_at_distance(signals.get("Speed"), normalized, segment.end_dist)
+        mid_speed = self._get_speed_at_distance(signals.get("Ground Speed"), normalized, mid_dist)
+        exit_speed = self._get_speed_at_distance(signals.get("Ground Speed"), normalized, segment.end_dist)
         min_speed = min(speed_values) if speed_values else None
         max_speed = max(speed_values) if speed_values else None
         avg_speed = sum(speed_values) / len(speed_values) if speed_values else None
 
-        # Segment time calculation
-        segment_time = self._calculate_segment_time(normalized, indices)
+        # Segment time calculation using timestamps from Lap Dist signal
+        segment_time = self._calculate_segment_time(lap_dist_signal, indices)
 
         # Technique metrics
         braking_distance = self._calculate_braking_distance(
@@ -217,25 +223,18 @@ class MetricsCalculator:
 
     def _calculate_segment_time(
         self,
-        normalized: NormalizedDistance,
+        signal: SignalSlice,
         indices: list[int],
     ) -> float:
-        """Calculate time spent in segment."""
-        if len(indices) < 2:
+        """Calculate time spent in segment using actual timestamps."""
+        if len(indices) < 2 or not signal or not signal.timestamps:
             return 0.0
 
-        # Use normalized distances and assume constant speed interpolation
-        # For more accuracy, we could use actual timestamps
         first_idx = indices[0]
         last_idx = indices[-1]
 
-        if first_idx < len(normalized.normalized_distances) and last_idx < len(normalized.normalized_distances):
-            # Estimate time based on typical sampling rate
-            # This is a simplification - ideally we'd use actual timestamps
-            num_points = len(indices)
-            if num_points > 0:
-                # Assume ~60Hz sampling
-                return num_points / 60.0
+        if first_idx < len(signal.timestamps) and last_idx < len(signal.timestamps):
+            return signal.timestamps[last_idx] - signal.timestamps[first_idx]
 
         return 0.0
 

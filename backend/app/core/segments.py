@@ -110,7 +110,7 @@ class SegmentService:
             steering_data = self.signal_service.get_lap_signals(
                 session_id=session_id,
                 lap_number=laps[0].lap_number,
-                channels=["Steering"],
+                channels=["Steering Pos"],
                 normalize_time=True,
                 use_distance=False,
             )
@@ -123,7 +123,7 @@ class SegmentService:
             brake_data = self.signal_service.get_lap_signals(
                 session_id=session_id,
                 lap_number=laps[0].lap_number,
-                channels=["Brake"],
+                channels=["Brake Pos"],
                 normalize_time=True,
                 use_distance=False,
             )
@@ -145,14 +145,15 @@ class SegmentService:
 
         logger.info(f"Using reference lap {ref_lap_number} for layout detection")
 
-        # Get signals for layout detection
-        channels = ["Steering", "Brake", "Throttle", "Speed", "LapDist"]
+        # Get signals for layout detection (full sampling, no downsampling)
+        channels = ["Steering Pos", "Brake Pos", "Throttle Pos", "Ground Speed", "Lap Dist"]
         signals = self.signal_service.get_lap_signals(
             session_id=session_id,
             lap_number=ref_lap_number,
             channels=channels,
             normalize_time=True,
             use_distance=False,
+            sampling_percent=100,
         )
 
         signal_map = {s.channel: s for s in signals}
@@ -161,11 +162,11 @@ class SegmentService:
         layout = self.layout_service.detect_layout(
             track_name=track_name,
             track_layout=track_layout,
-            steering_signal=signal_map.get("Steering"),
-            brake_signal=signal_map.get("Brake"),
-            throttle_signal=signal_map.get("Throttle"),
-            speed_signal=signal_map.get("Speed"),
-            lap_dist_signal=signal_map.get("LapDist"),
+            steering_signal=signal_map.get("Steering Pos"),
+            brake_signal=signal_map.get("Brake Pos"),
+            throttle_signal=signal_map.get("Throttle Pos"),
+            speed_signal=signal_map.get("Ground Speed"),
+            lap_dist_signal=signal_map.get("Lap Dist"),
             lap_number=ref_lap_number,
             session_id=session_id,
         )
@@ -206,14 +207,15 @@ class SegmentService:
         # Calculate metrics
         logger.info(f"Calculating metrics for {session_id} lap {lap_number}")
 
-        # Get all required signals
-        channels = ["Steering", "Brake", "Throttle", "Speed", "LapDist"]
+        # Get all required signals (full sampling, no downsampling)
+        channels = ["Steering Pos", "Brake Pos", "Throttle Pos", "Ground Speed", "Lap Dist"]
         signals = self.signal_service.get_lap_signals(
             session_id=session_id,
             lap_number=lap_number,
             channels=channels,
             normalize_time=True,
             use_distance=False,
+            sampling_percent=100,
         )
 
         signal_map = {s.channel: s for s in signals}

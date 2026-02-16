@@ -71,24 +71,24 @@ const columns: GridColDef<SegmentMetrics>[] = [
     headerName: 'Braking (m)',
     width: 100,
     type: 'number',
-    valueFormatter: (value: number | undefined) =>
-      value !== undefined ? value.toFixed(1) : '-',
+    valueFormatter: (value: number | null | undefined) =>
+      value !== undefined && value !== null ? value.toFixed(1) : '-',
   },
   {
     field: 'throttle_application',
     headerName: 'Throttle (m)',
     width: 110,
     type: 'number',
-    valueFormatter: (value: number | undefined) =>
-      value !== undefined ? value.toFixed(1) : '-',
+    valueFormatter: (value: number | null | undefined) =>
+      value !== undefined && value !== null ? value.toFixed(1) : '-',
   },
   {
     field: 'steering_smoothness',
     headerName: 'Smoothness',
     width: 100,
     type: 'number',
-    valueFormatter: (value: number | undefined) =>
-      value !== undefined ? value.toFixed(3) : '-',
+    valueFormatter: (value: number | null | undefined) =>
+      value !== undefined && value !== null ? value.toFixed(3) : '-',
   },
 ];
 

@@ -379,7 +379,7 @@ class DuckDBService:
         Distance is typically stored in a channel like 'Distance' or 'LapDistance'.
         """
         # Common distance channel names in racing telemetry
-        distance_channels = ["Distance", "LapDistance", "mTotalDistance", "LapDist"]
+        distance_channels = ["Lap Dist", "Distance", "LapDistance", "mTotalDistance", "LapDist"]
 
         for channel in distance_channels:
             if self.channel_exists(channel):

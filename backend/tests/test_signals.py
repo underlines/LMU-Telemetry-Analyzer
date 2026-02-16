@@ -126,7 +126,7 @@ class TestSignalEndpoints:
         """Test retrieving signals for non-existent lap."""
         response = client.get(
             f"/api/v1/signals/sessions/{SAMPLE_SESSION_ID}/laps/99999",
-            params={"channels": ["Speed"]},
+            params={"channels": ["Ground Speed"]},
         )
         assert response.status_code == 404
 
@@ -231,7 +231,7 @@ class TestSignalEndpoints:
             json={
                 "target_lap": 99998,
                 "reference_lap": 99999,
-                "channels": ["Speed"],
+                "channels": ["Ground Speed"],
             },
         )
         assert response.status_code == 404

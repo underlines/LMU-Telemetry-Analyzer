@@ -14,7 +14,7 @@ Local-first telemetry analysis tool for Le Mans Ultimate (LMU) racing game.
 # Setup
 cd backend
 uv sync                           # Install dependencies
-uv add <package>                  # Add new dependency
+uv add <package>                  # Add new dependency - never use `uv pip`
 uv run python -c "..."            # Run python directly
 
 # Testing

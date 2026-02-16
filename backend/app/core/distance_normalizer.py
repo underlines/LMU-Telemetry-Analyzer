@@ -1,6 +1,6 @@
-"""Distance normalization for LapDist signals.
+"""Distance normalization for Lap Dist signals.
 
-Converts LapDist to monotonic 0..track_length coordinates.
+Converts Lap Dist to monotonic 0..track_length coordinates.
 Handles wrap-around at start/finish and negative value artifacts.
 """
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class DistanceNormalizer:
-    """Normalizes LapDist signals to monotonic track coordinates."""
+    """Normalizes Lap Dist signals to monotonic track coordinates."""
 
     # Threshold for detecting wrap-around (meters)
     WRAP_THRESHOLD: float = 50.0
@@ -24,7 +24,7 @@ class DistanceNormalizer:
         lap_distances: list[float],
         lap_start_offset: float = 0.0,
     ) -> NormalizedDistance:
-        """Convert LapDist to monotonic 0..track_length.
+        """Convert Lap Dist to monotonic 0..track_length.
 
         Algorithm:
         1. Detect track length (max value before wrap)
@@ -33,7 +33,7 @@ class DistanceNormalizer:
         4. Handle negative values by clamping to 0 or interpolation
 
         Args:
-            lap_distances: Raw LapDist values from telemetry
+            lap_distances: Raw Lap Dist values from telemetry
             lap_start_offset: Starting offset for multi-lap continuity
 
         Returns:
@@ -108,7 +108,7 @@ class DistanceNormalizer:
         )
 
     def _estimate_track_length(self, lap_distances: list[float]) -> float:
-        """Estimate track length from LapDist values.
+        """Estimate track length from Lap Dist values.
 
         Finds the maximum reasonable value before any wrap.
         Ignores negative values and outliers.

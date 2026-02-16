@@ -164,10 +164,10 @@ class SessionDetail(Session):
                 "weather_conditions": "Clear",
                 "lap_count": 12,
                 "channels": [
-                    {"name": "Speed", "frequency": 60, "unit": "m/s"},
-                    {"name": "Throttle", "frequency": 60, "unit": "%"},
-                    {"name": "Brake", "frequency": 60, "unit": "%"},
-                    {"name": "Steering", "frequency": 60, "unit": "rad"}
+                    {"name": "Ground Speed", "frequency": 100, "unit": "km/h"},
+                    {"name": "Throttle Pos", "frequency": 50, "unit": "%"},
+                    {"name": "Brake Pos", "frequency": 50, "unit": "%"},
+                    {"name": "Steering Pos", "frequency": 100, "unit": ""}
                 ],
                 "events": [
                     {"name": "Lap", "unit": ""},

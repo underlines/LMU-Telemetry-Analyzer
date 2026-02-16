@@ -15,11 +15,11 @@ class SignalMetadata(BaseModel):
     model_config = {
         "json_schema_extra": {
             "example": {
-                "name": "Speed",
-                "frequency": 60,
-                "unit": "m/s",
+                "name": "Ground Speed",
+                "frequency": 100,
+                "unit": "km/h",
                 "min_value": 0.0,
-                "max_value": 95.5
+                "max_value": 280.0
             }
         }
     }
@@ -76,18 +76,18 @@ class SignalList(BaseModel):
                 "session_id": "session_2026-02-07_22-56-50",
                 "signals": [
                     {
-                        "name": "Speed",
-                        "frequency": 60,
-                        "unit": "m/s",
+                        "name": "Ground Speed",
+                        "frequency": 100,
+                        "unit": "km/h",
                         "min_value": 0.0,
-                        "max_value": 95.5
+                        "max_value": 280.0
                     },
                     {
-                        "name": "Throttle",
-                        "frequency": 60,
+                        "name": "Throttle Pos",
+                        "frequency": 50,
                         "unit": "%",
                         "min_value": 0.0,
-                        "max_value": 1.0
+                        "max_value": 100.0
                     }
                 ],
                 "total": 2

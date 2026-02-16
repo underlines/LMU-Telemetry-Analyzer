@@ -200,7 +200,7 @@ class NormalizedDistance(BaseModel):
     """Normalized distance data for a lap."""
 
     original_distances: list[float] = Field(
-        default_factory=list, description="Raw LapDist values"
+        default_factory=list, description="Raw Lap Dist values"
     )
     normalized_distances: list[float] = Field(
         default_factory=list, description="Monotonic 0..track_length values"
